@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+.env.*
+secrets
+node_modules
+web/node_modules
+web/dist
+output
+coverage
+playwright-report
+test-results
+*.log
+*.tsbuildinfo
+.DS_Store

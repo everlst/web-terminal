@@ -1,0 +1,57 @@
+name: web-terminal
+
+services:
+  web-terminal:
+    image: evlst/web-terminal:0.1.1
+    command: server
+    user: "10001:10001"
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    ports:
+      - "${WEB_TERMINAL_PORT:-3000}:3000"
+    environment:
+      WEB_TERMINAL_PASSWORD: ${WEB_TERMINAL_PASSWORD:?请设置 WEB_TERMINAL_PASSWORD}
+    volumes:
+      - runtime:/run/web-terminal
+    depends_on:
+      - control-agent
+    labels:
+      com.evlst.web-terminal.internal: "true"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/web-terminal", "healthcheck", "--url", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - web-terminal
+
+  control-agent:
+    image: evlst/web-terminal:0.1.1
+    command: agent
+    user: "0:0"
+    restart: unless-stopped
+    privileged: true
+    pid: host
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    volumes:
+      - runtime:/run/web-terminal
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      com.evlst.web-terminal.internal: "true"
+
+volumes:
+  runtime:
+
+networks:
+  web-terminal:
+    name: web-terminal
