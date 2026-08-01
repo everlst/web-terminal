@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { terminalSocketURL } from "../api";
+import { shouldProcessTerminalKeyEvent } from "../terminalShortcuts";
 import type { SessionState, SessionSummary, TerminalControlMessage } from "../types";
 
 interface TerminalViewProps {
@@ -69,6 +70,7 @@ export function TerminalView({ session, active, onState }: TerminalViewProps) {
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(hostRef.current);
+    terminal.attachCustomKeyEventHandler(shouldProcessTerminalKeyEvent);
     terminalRef.current = terminal;
     fitRef.current = fit;
     requestAnimationFrame(() => fit.fit());

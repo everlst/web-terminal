@@ -2,7 +2,7 @@ name: web-terminal
 
 services:
   web-terminal:
-    image: evlst/web-terminal:0.1.1
+    image: evlst/web-terminal:0.1.2
     command: server
     user: "10001:10001"
     restart: unless-stopped
@@ -33,7 +33,7 @@ services:
       - web-terminal
 
   control-agent:
-    image: evlst/web-terminal:0.1.1
+    image: evlst/web-terminal:0.1.2
     command: agent
     user: "0:0"
     restart: unless-stopped
