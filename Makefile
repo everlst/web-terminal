@@ -1,6 +1,6 @@
 .PHONY: test test-web test-go build image
 
-VERSION ?= 0.1.2
+VERSION ?= 0.1.3
 
 test: test-web test-go
 

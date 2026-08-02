@@ -142,12 +142,11 @@ button { color: inherit; }
 .new-session-button { min-width: 170px; align-items: center; gap: 11px; padding: 0 18px; cursor: pointer; }
 
 .terminal-stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--terminal); }
-.terminal-pane { position: absolute; inset: 0; display: none; background: var(--terminal); }
-.terminal-pane.is-active { display: block; }
-.terminal-host { width: 100%; height: 100%; padding: 27px 25px 20px; }
+.terminal-pane { position: absolute; inset: 0; visibility: hidden; padding: 27px 25px 20px; background: var(--terminal); pointer-events: none; }
+.terminal-pane.is-active { visibility: visible; pointer-events: auto; }
+.terminal-host { width: 100%; height: 100%; }
 .terminal-host .xterm { height: 100%; }
 .terminal-host .xterm-viewport { scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent; scrollbar-width: thin; }
-.terminal-host .xterm-screen { padding-bottom: 12px; }
 .empty-terminal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 13px; color: var(--text-muted); font-size: 15px; }
 
 .menu-backdrop { position: fixed; z-index: 30; inset: 0; border: 0; background: transparent; }
@@ -185,7 +184,7 @@ button.target-row:hover { background: color-mix(in srgb, var(--text) 5%, transpa
   .tab-main > span { max-width: 76px; }
   .tab-close { width: 34px; }
   .new-session-button { min-width: 142px; padding: 0 15px; }
-  .terminal-host { padding: 20px 16px 16px; }
+  .terminal-pane { padding: 20px 16px max(16px, env(safe-area-inset-bottom)); }
   .menu-backdrop { background: rgba(0, 0, 0, .18); backdrop-filter: blur(1px); }
   .session-menu { top: auto; right: 0; bottom: 0; left: 0; width: 100%; max-height: min(48vh, 460px); padding: 36px 16px max(18px, env(safe-area-inset-bottom)); border: 1px solid var(--border); border-bottom: 0; border-radius: 24px 24px 0 0; }
   .sheet-handle { position: absolute; top: 14px; left: 50%; display: block; width: 42px; height: 5px; border-radius: 5px; background: var(--text-muted); opacity: .48; transform: translateX(-50%); }

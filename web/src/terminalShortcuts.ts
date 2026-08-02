@@ -1,16 +1,56 @@
-const macPlatformPattern = /Mac|iPhone|iPad|iPod/;
+export type TerminalPlatform = "mac" | "windows" | "linux" | "other";
 
-export function isMacPlatform(platform = navigator.platform): boolean {
-  return macPlatformPattern.test(platform);
+export type TerminalShortcutAction =
+  | "browser-copy"
+  | "browser-paste"
+  | "clear"
+  | "font-increase"
+  | "font-decrease"
+  | "font-reset";
+
+interface NavigatorWithUserAgentData extends Navigator {
+  userAgentData?: { platform?: string };
 }
 
-export function shouldProcessTerminalKeyEvent(event: KeyboardEvent, mac = isMacPlatform()): boolean {
-  if (event.type !== "keydown" || !mac) return true;
+function browserPlatform(): string {
+  const browserNavigator = navigator as NavigatorWithUserAgentData;
+  return browserNavigator.userAgentData?.platform || browserNavigator.platform;
+}
 
-  const isPlainCommandShortcut = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-  if (!isPlainCommandShortcut) return true;
+export function detectTerminalPlatform(platform = browserPlatform()): TerminalPlatform {
+  if (/Mac|iPhone|iPad|iPod/i.test(platform)) return "mac";
+  if (/Win/i.test(platform)) return "windows";
+  if (/Linux|Android|CrOS/i.test(platform)) return "linux";
+  return "other";
+}
+
+export function terminalShortcutAction(
+  event: KeyboardEvent,
+  platform = detectTerminalPlatform(),
+  hasSelection = false
+): TerminalShortcutAction | null {
+  if (event.type !== "keydown" || event.isComposing) return null;
 
   const key = event.key.toLowerCase();
-  // Let the browser dispatch xterm's native copy/paste events for Command+C/V.
-  return key !== "c" && key !== "v";
+  if (platform === "mac") {
+    if (!event.metaKey || event.ctrlKey || event.altKey) return null;
+    if (key === "c" && !event.shiftKey) return "browser-copy";
+    if (key === "v" && !event.shiftKey) return "browser-paste";
+    if (key === "k" && !event.shiftKey) return "clear";
+    if ((key === "+" || key === "=") && (!event.shiftKey || key === "+")) return "font-increase";
+    if ((key === "-" || key === "_") && (!event.shiftKey || key === "_")) return "font-decrease";
+    if (key === "0" && !event.shiftKey) return "font-reset";
+    return null;
+  }
+
+  if (platform === "windows") {
+    if (!event.ctrlKey || event.metaKey || event.altKey) return null;
+    if (key === "c" && !event.shiftKey) return hasSelection ? "browser-copy" : null;
+    if (key === "v" && !event.shiftKey) return "browser-paste";
+    if ((key === "+" || key === "=") && (!event.shiftKey || key === "+")) return "font-increase";
+    if ((key === "-" || key === "_") && (!event.shiftKey || key === "_")) return "font-decrease";
+    if (key === "0" && !event.shiftKey) return "font-reset";
+  }
+
+  return null;
 }

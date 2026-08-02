@@ -105,7 +105,9 @@ Cloudflare 参考文档：
 - 新建终端菜单列出宿主机和所有运行中容器。
 - 容器终端遵循容器镜像或 Compose 配置的默认用户，不自动使用 root。
 - 容器内依次探测 `bash`、`zsh`、`ash`、`sh`。
-- macOS 使用 `Command+C` / `Command+V` 复制粘贴；Windows 使用右键菜单粘贴；两端的 `Control+C` 均用于中断当前命令。
+- macOS 使用 `Command+C` / `Command+V` 复制粘贴，`Command+K` 清空屏幕与回滚区；`Control+C` 用于中断当前命令。
+- Windows 使用 `Control+V` 粘贴；存在终端选区时 `Control+C` 复制，没有选区时仍用于中断当前命令。
+- macOS 使用 `Command++` / `Command+-` / `Command+0`，Windows 使用 `Control++` / `Control+-` / `Control+0` 调整或复位终端字号。
 - 页面刷新或 Cloudflare WebSocket 短暂断开时，服务端会重放最后 1 MiB 输出。
 - 服务重启、退出登录、超过 12 小时或断开超过 5 分钟后，会话会被终止。
 
@@ -130,7 +132,7 @@ docker run --rm -v "$PWD":/src -w /src golang:1.25-alpine \
 构建本地镜像：
 
 ```bash
-docker build --build-arg VERSION=0.1.2 -t evlst/web-terminal:0.1.2 .
+docker build --build-arg VERSION=0.1.3 -t evlst/web-terminal:0.1.3 .
 ```
 
 ## 发布镜像
@@ -139,12 +141,12 @@ docker build --build-arg VERSION=0.1.2 -t evlst/web-terminal:0.1.2 .
 docker buildx build \
   --builder multiarch \
   --platform linux/amd64,linux/arm64 \
-  --build-arg VERSION=0.1.2 \
-  -t evlst/web-terminal:0.1.2 \
+  --build-arg VERSION=0.1.3 \
+  -t evlst/web-terminal:0.1.3 \
   -t evlst/web-terminal:latest \
   --push .
 
-docker buildx imagetools inspect evlst/web-terminal:0.1.2
+docker buildx imagetools inspect evlst/web-terminal:0.1.3
 docker buildx imagetools inspect evlst/web-terminal:latest
 ```
 
@@ -163,6 +165,6 @@ docker buildx imagetools inspect evlst/web-terminal:latest
 
 终端输入输出使用 WebSocket 二进制帧；`resize`、`state`、`exit`、`error` 和心跳使用 JSON 文本帧。
 
-## v0.1.2 边界
+## v0.1.3 边界
 
 不包含多用户、2FA、文件管理、上传下载、命令审计、容器创建/停止/删除、数据库或服务重启后的长期终端持久化。

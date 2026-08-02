@@ -3,7 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { terminalSocketURL } from "../api";
-import { shouldProcessTerminalKeyEvent } from "../terminalShortcuts";
+import { detectTerminalPlatform, terminalShortcutAction } from "../terminalShortcuts";
 import type { SessionState, SessionSummary, TerminalControlMessage } from "../types";
 
 interface TerminalViewProps {
@@ -11,6 +11,9 @@ interface TerminalViewProps {
   active: boolean;
   onState: (id: string, state: SessionState) => void;
 }
+
+const MINIMUM_FONT_SIZE = 9;
+const MAXIMUM_FONT_SIZE = 32;
 
 function currentTheme() {
   const light = window.matchMedia("(prefers-color-scheme: light)").matches;
@@ -53,14 +56,16 @@ export function TerminalView({ session, active, onState }: TerminalViewProps) {
 
   useEffect(() => {
     if (!hostRef.current) return;
+    const defaultFontSize = window.innerWidth <= 680 ? 14 : 15;
+    const platform = detectTerminalPlatform();
     const terminal = new Terminal({
       allowProposedApi: false,
       convertEol: false,
       cursorBlink: true,
       cursorStyle: "block",
       disableStdin: false,
-      fontFamily: '"SFMono-Regular", "Cascadia Code", "Liberation Mono", Menlo, Consolas, monospace',
-      fontSize: window.innerWidth <= 680 ? 14 : 15,
+      fontFamily: '"SFMono-Regular", "SF Mono", "Cascadia Mono", "Cascadia Code", "Liberation Mono", Menlo, Consolas, monospace',
+      fontSize: defaultFontSize,
       fontWeight: "400",
       lineHeight: 1.45,
       letterSpacing: 0,
@@ -70,19 +75,48 @@ export function TerminalView({ session, active, onState }: TerminalViewProps) {
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(hostRef.current);
-    terminal.attachCustomKeyEventHandler(shouldProcessTerminalKeyEvent);
+    let disposed = false;
+    let fitFrame = 0;
+    const scheduleFit = () => {
+      if (disposed) return;
+      window.cancelAnimationFrame(fitFrame);
+      fitFrame = window.requestAnimationFrame(() => {
+        if (!disposed) fit.fit();
+      });
+    };
+    terminal.attachCustomKeyEventHandler((event) => {
+      const action = terminalShortcutAction(event, platform, terminal.hasSelection());
+      if (!action) return true;
+      if (action === "browser-copy" || action === "browser-paste") return false;
+
+      event.preventDefault();
+      if (action === "clear") {
+        terminal.clear();
+        return false;
+      }
+
+      const currentFontSize = terminal.options.fontSize ?? defaultFontSize;
+      terminal.options.fontSize = action === "font-reset"
+        ? defaultFontSize
+        : Math.min(MAXIMUM_FONT_SIZE, Math.max(MINIMUM_FONT_SIZE, currentFontSize + (action === "font-increase" ? 1 : -1)));
+      scheduleFit();
+      return false;
+    });
     terminalRef.current = terminal;
     fitRef.current = fit;
-    requestAnimationFrame(() => fit.fit());
+    scheduleFit();
 
     const themeQuery = window.matchMedia("(prefers-color-scheme: light)");
     const updateTheme = () => { terminal.options.theme = currentTheme(); };
     themeQuery.addEventListener("change", updateTheme);
     const resizeObserver = new ResizeObserver(() => {
-      if (hostRef.current?.offsetParent !== null) fit.fit();
+      if (hostRef.current?.offsetParent !== null) scheduleFit();
     });
     resizeObserver.observe(hostRef.current);
+    void document.fonts?.ready.then(scheduleFit);
     return () => {
+      disposed = true;
+      window.cancelAnimationFrame(fitFrame);
       resizeObserver.disconnect();
       themeQuery.removeEventListener("change", updateTheme);
       terminal.dispose();
